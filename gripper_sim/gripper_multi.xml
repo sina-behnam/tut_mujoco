@@ -1,0 +1,119 @@
+<mujoco model="parallel_gripper_multi">
+
+  <compiler angle="radian" autolimits="true"/>
+
+  <option timestep="0.002" gravity="0 0 -9.81" solver="Newton"
+          iterations="50" tolerance="1e-10"/>
+
+  <default>
+    <joint limited="true" damping="0.5"/>
+    <geom contype="1" conaffinity="1" condim="3"
+          friction="1.0 0.005 0.0001"
+          solimp="0.99 0.99 0.01" solref="0.01 1"/>
+  </default>
+
+  <asset>
+    <material name="table_mat"    rgba="0.65 0.55 0.40 1"/>
+    <material name="gripper_mat"  rgba="0.25 0.25 0.75 1"/>
+    <material name="finger_mat"   rgba="0.15 0.65 0.15 1"/>
+    <!-- object materials -->
+    <material name="box_mat"      rgba="0.85 0.20 0.10 1"/>   <!-- red   -->
+    <material name="cyl_mat"      rgba="0.10 0.35 0.85 1"/>   <!-- blue  -->
+    <material name="sph_mat"      rgba="0.15 0.75 0.35 1"/>   <!-- green -->
+  </asset>
+
+  <worldbody>
+
+    <!-- ── Table ─────────────────────────────────────────────────────────── -->
+    <body name="table" pos="0 0 0.4">
+      <geom name="table_top" type="box" size="0.5 0.5 0.02"
+            material="table_mat" mass="200"/>
+      <geom type="box" size="0.025 0.025 0.2" pos=" 0.45  0.45 -0.22" rgba="0.5 0.4 0.3 1"/>
+      <geom type="box" size="0.025 0.025 0.2" pos="-0.45  0.45 -0.22" rgba="0.5 0.4 0.3 1"/>
+      <geom type="box" size="0.025 0.025 0.2" pos=" 0.45 -0.45 -0.22" rgba="0.5 0.4 0.3 1"/>
+      <geom type="box" size="0.025 0.025 0.2" pos="-0.45 -0.45 -0.22" rgba="0.5 0.4 0.3 1"/>
+    </body>
+
+    <!-- ── Object: Box  (heavy, 150 g) ───────────────────────────────────── -->
+    <!--   half-sizes 0.03 m → rests at z = 0.42 + 0.03 = 0.45             -->
+    <body name="obj_box" pos="0 0 0.45">
+      <freejoint name="free_box"/>
+      <geom name="geom_box" type="box" size="0.03 0.03 0.03"
+            material="box_mat" mass="0.15"
+            friction="1.5 0.005 0.0001"/>
+      <site name="site_box" size="0.004"/>
+    </body>
+
+    <!-- ── Object: Cylinder  (medium, 80 g) ─────────────────────────────── -->
+    <!--   radius=0.025 half-height=0.035 → rests at z = 0.42 + 0.035 = 0.455 -->
+    <body name="obj_cyl" pos="0 0 0.455">
+      <freejoint name="free_cyl"/>
+      <geom name="geom_cyl" type="cylinder" size="0.025 0.035"
+            material="cyl_mat" mass="0.08"
+            friction="1.2 0.005 0.0001"/>
+      <site name="site_cyl" size="0.004"/>
+    </body>
+
+    <!-- ── Object: Sphere  (light, 30 g) ─────────────────────────────────── -->
+    <!--   radius=0.028 → rests at z = 0.42 + 0.028 = 0.448                -->
+    <body name="obj_sph" pos="0 0 0.448">
+      <freejoint name="free_sph"/>
+      <geom name="geom_sph" type="sphere" size="0.028"
+            material="sph_mat" mass="0.03"
+            friction="0.8 0.005 0.0001"/>
+      <site name="site_sph" size="0.004"/>
+    </body>
+
+    <!-- ── Gripper ────────────────────────────────────────────────────────── -->
+    <body name="gripper_base" pos="0 0 0.75">
+      <joint name="gripper_slide_z" type="slide" axis="0 0 1"
+             range="-0.35 0.1" damping="10"/>
+      <geom name="base_geom" type="box" size="0.055 0.045 0.022"
+            material="gripper_mat" mass="0.5"/>
+
+      <!-- site at the geometric centre between the two fingertips -->
+      <site name="gripper_center" pos="0 0 -0.11" size="0.005"/>
+
+      <!-- Left finger -->
+      <body name="left_finger" pos="-0.035 0 -0.02">
+        <joint name="left_finger_joint" type="slide" axis="1 0 0"
+               range="0.0 0.06" damping="2"/>
+        <geom name="left_palm" type="box" size="0.015 0.012 0.04"
+              pos="0 0 -0.04" material="finger_mat" mass="0.05"/>
+        <geom name="left_tip"  type="box" size="0.008 0.010 0.012"
+              pos="0.007 0 -0.092" material="finger_mat" mass="0.01"
+              friction="2.5 0.01 0.001"/>
+        <site name="site_left_tip" pos="0.007 0 -0.092" size="0.004"/>
+      </body>
+
+      <!-- Right finger -->
+      <body name="right_finger" pos="0.035 0 -0.02">
+        <joint name="right_finger_joint" type="slide" axis="-1 0 0"
+               range="0.0 0.06" damping="2"/>
+        <geom name="right_palm" type="box" size="0.015 0.012 0.04"
+              pos="0 0 -0.04" material="finger_mat" mass="0.05"/>
+        <geom name="right_tip"  type="box" size="0.008 0.010 0.012"
+              pos="-0.007 0 -0.092" material="finger_mat" mass="0.01"
+              friction="2.5 0.01 0.001"/>
+        <site name="site_right_tip" pos="-0.007 0 -0.092" size="0.004"/>
+      </body>
+    </body>
+
+  </worldbody>
+
+  <!-- ── Actuators ─────────────────────────────────────────────────────────── -->
+  <actuator>
+    <position name="act_z"     joint="gripper_slide_z"   kp="500" ctrlrange="-0.35 0.1"/>
+    <position name="act_left"  joint="left_finger_joint"  kp="100" ctrlrange="0.0 0.06"/>
+    <position name="act_right" joint="right_finger_joint" kp="100" ctrlrange="0.0 0.06"/>
+  </actuator>
+
+  <!-- ── Sensors ───────────────────────────────────────────────────────────── -->
+  <sensor>
+    <framepos  name="sens_box_pos" objtype="site" objname="site_box"/>
+    <framepos  name="sens_cyl_pos" objtype="site" objname="site_cyl"/>
+    <framepos  name="sens_sph_pos" objtype="site" objname="site_sph"/>
+    <framepos  name="sens_gripper" objtype="site" objname="gripper_center"/>
+  </sensor>
+
+</mujoco>
